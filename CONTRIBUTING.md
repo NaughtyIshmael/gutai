@@ -23,7 +23,7 @@ We welcome contributions! This document outlines how to contribute to the projec
 ### Setup
 
 ```bash
-git clone https://github.com/your-org/gutai
+git clone https://github.com/NaughtyIshmael/gutai
 cd gutai
 pip install -r requirements.txt
 ```
@@ -88,6 +88,6 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ## 📞 Support
 
-- 📖 [Documentation](https://github.com/your-org/gutai/wiki)
-- 🐛 [Issues](https://github.com/your-org/gutai/issues)
-- 💬 [Discussions](https://github.com/your-org/gutai/discussions)
+- 📖 [Documentation](https://github.com/NaughtyIshmael/gutai/wiki)
+- 🐛 [Issues](https://github.com/NaughtyIshmael/gutai/issues)
+- 💬 [Discussions](https://github.com/NaughtyIshmael/gutai/discussions)
