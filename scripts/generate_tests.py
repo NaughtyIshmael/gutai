@@ -229,6 +229,9 @@ class TestGenerator:
             f"Found {len(elements['functions'])} functions and {len(elements['classes'])} classes"
         )
 
+        if len(elements["functions"]) == 0 and len(elements["classes"]) == 0:
+            raise Exception(f"No testable elements found in {file_path}")
+
         # Determine test framework
         if test_framework == "auto":
             test_framework = self._detect_test_framework(analyzer.language)
@@ -413,14 +416,15 @@ def main():
     test_generator = TestGenerator(github_token, args.ai_model)
 
     generated_files = []
+    processed_file = 0
 
     # Process each file
-    for i, file_data in enumerate(least_covered_files[: args.max_files]):
+    for file_data in least_covered_files:
         filename = file_data["filename"]
         coverage = file_data["coverage"]
 
         print(
-            f"\nProcessing file {i+1}/{min(len(least_covered_files), args.max_files)}: {filename}"
+            f"\nProcessing file {processed_file+1}/{min(len(least_covered_files), args.max_files)}: {filename}"
         )
         print(f"Current coverage: {coverage:.1f}%")
 
@@ -446,6 +450,10 @@ def main():
             )
 
             print(f"Generated test file: {test_file_path}")
+            processed_file += 1
+            if processed_file >= args.max_files:
+                print(f"Reached maximum files to process: {args.max_files}")
+                break
 
         except Exception as e:
             print(f"Error generating tests for {filename}: {e}")
