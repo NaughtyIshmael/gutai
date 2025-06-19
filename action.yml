@@ -56,16 +56,16 @@ inputs:
     default: "json"
 
 outputs:
-  files-processed:
-    description: "Number of files that were processed"
-  tests-generated:
-    description: "Number of test files generated"
-  coverage-report:
-    description: "JSON report of coverage analysis"
-  pr-url:
-    description: "URL of the created pull request (if created)"
-  branch-name:
-    description: "Name of the branch created with tests"
+  files_processed:
+    value: ${{ steps.streamer.outputs.files_processed }}
+  tests_generated:
+    value: ${{ steps.streamer.outputs.tests_generated }}
+  coverage_report:
+    value: ${{ steps.streamer.outputs.coverage_report }}
+  pr_url:
+    value: ${{ steps.streamer.outputs.pr_url }}
+  branch_name:
+    value: ${{ steps.streamer.outputs.branch_name }}
 
 runs:
   using: "composite"
@@ -138,26 +138,31 @@ runs:
 
     - name: Set outputs
       shell: bash
+      id: streamer
       run: |
         if [ -f generated_tests/summary.json ]; then
           files_processed=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('files_processed', 0))")
           tests_generated=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('tests_generated', 0))")
-          echo "files-processed=$files_processed" >> $GITHUB_OUTPUT
-          echo "tests-generated=$tests_generated" >> $GITHUB_OUTPUT
+          echo "files_processed=$files_processed" >> $GITHUB_OUTPUT
+          echo "tests_generated=$tests_generated" >> $GITHUB_OUTPUT
         else
-          echo "files-processed=0" >> $GITHUB_OUTPUT
-          echo "tests-generated=0" >> $GITHUB_OUTPUT
+          echo "files_processed=0" >> $GITHUB_OUTPUT
+          echo "tests_generated=0" >> $GITHUB_OUTPUT
         fi
 
         if [ -f coverage_data.json ]; then
-          echo "coverage-report<<EOF" >> $GITHUB_OUTPUT
-          cat coverage_data.json >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          coverage_content=$(cat coverage_data.json | tr -d '\n' | sed 's/"/\\"/g')
+          echo "coverage_report=$coverage_content" >> $GITHUB_OUTPUT
+        else
+          echo "coverage_report=" >> $GITHUB_OUTPUT
         fi
 
         if [ -f pr_info.json ]; then
           pr_url=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('pr_url', ''))")
           branch_name=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('branch_name', ''))")
-          echo "pr-url=$pr_url" >> $GITHUB_OUTPUT
-          echo "branch-name=$branch_name" >> $GITHUB_OUTPUT
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+        else
+          echo "pr_url=" >> $GITHUB_OUTPUT
+          echo "branch_name=" >> $GITHUB_OUTPUT
         fi
