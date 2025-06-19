@@ -1,0 +1,163 @@
+name: "AI Test Coverage Booster"
+description: "Automatically identify files with low test coverage and generate comprehensive unit tests using AI"
+author: "Your Organization"
+branding:
+  icon: "target"
+  color: "green"
+
+inputs:
+  codecov-token:
+    description: "Codecov API token for fetching coverage data"
+    required: false
+    default: ""
+  github-token:
+    description: "GitHub token for API access and PR creation"
+    required: true
+    default: ${{ github.token }}
+  max-files:
+    description: "Maximum number of files to process"
+    required: false
+    default: "3"
+  target-coverage:
+    description: "Only process files below this coverage percentage"
+    required: false
+    default: "80"
+  languages:
+    description: "Comma-separated list of languages to include (auto-detect if empty)"
+    required: false
+    default: ""
+  exclude-patterns:
+    description: "Comma-separated glob patterns to exclude"
+    required: false
+    default: "test*,spec*,*_test*,*_spec*,tests/*,spec/*"
+  test-framework:
+    description: "Preferred test framework (auto-detected if not specified)"
+    required: false
+    default: "auto"
+  create-pr:
+    description: "Whether to create a pull request with generated tests"
+    required: false
+    default: "true"
+  pr-title:
+    description: "Custom title for the pull request (auto-generated if not provided)"
+    required: false
+    default: ""
+  branch-prefix:
+    description: "Prefix for the branch name"
+    required: false
+    default: "coverage-boost"
+  ai-model:
+    description: "GitHub Models AI model to use"
+    required: false
+    default: "openai/gpt-4.1-mini"
+  output-format:
+    description: "Output format for test generation report"
+    required: false
+    default: "json"
+
+outputs:
+  files-processed:
+    description: "Number of files that were processed"
+  tests-generated:
+    description: "Number of test files generated"
+  coverage-report:
+    description: "JSON report of coverage analysis"
+  pr-url:
+    description: "URL of the created pull request (if created)"
+  branch-name:
+    description: "Name of the branch created with tests"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install azure-ai-inference requests PyYAML
+
+    - name: Fetch coverage data
+      id: coverage
+      shell: bash
+      env:
+        CODECOV_TOKEN: ${{ inputs.codecov-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        python ${{ github.action_path }}/scripts/get_coverage_data.py \
+          --org "${{ github.repository_owner }}" \
+          --repo "${{ github.event.repository.name }}" \
+          --branch "${{ github.ref_name }}" \
+          --limit "${{ inputs.max-files }}" \
+          --target-coverage "${{ inputs.target-coverage }}" \
+          --exclude-patterns "${{ inputs.exclude-patterns }}" \
+          --languages "${{ inputs.languages }}" \
+          --output coverage_data.json
+
+    - name: Generate tests using AI
+      id: generate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if [ -f coverage_data.json ]; then
+          python ${{ github.action_path }}/scripts/generate_tests.py \
+            --coverage-data coverage_data.json \
+            --max-files "${{ inputs.max-files }}" \
+            --test-framework "${{ inputs.test-framework }}" \
+            --ai-model "${{ inputs.ai-model }}" \
+            --output-dir generated_tests \
+            --output-format "${{ inputs.output-format }}"
+        else
+          echo "No coverage data found, skipping test generation"
+          echo "files-processed=0" >> $GITHUB_OUTPUT
+          echo "tests-generated=0" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+    - name: Create pull request
+      id: create-pr
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if [ "${{ inputs.create-pr }}" = "true" ] && [ -d generated_tests ]; then
+          python ${{ github.action_path }}/scripts/create_pr.py \
+            --coverage-data coverage_data.json \
+            --generated-tests generated_tests \
+            --branch-prefix "${{ inputs.branch-prefix }}" \
+            --pr-title "${{ inputs.pr-title }}" \
+            --ai-model "${{ inputs.ai-model }}"
+        else
+          echo "Skipping PR creation"
+        fi
+
+    - name: Set outputs
+      shell: bash
+      run: |
+        if [ -f generated_tests/summary.json ]; then
+          files_processed=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('files_processed', 0))")
+          tests_generated=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('tests_generated', 0))")
+          echo "files-processed=$files_processed" >> $GITHUB_OUTPUT
+          echo "tests-generated=$tests_generated" >> $GITHUB_OUTPUT
+        else
+          echo "files-processed=0" >> $GITHUB_OUTPUT
+          echo "tests-generated=0" >> $GITHUB_OUTPUT
+        fi
+
+        if [ -f coverage_data.json ]; then
+          echo "coverage-report<<EOF" >> $GITHUB_OUTPUT
+          cat coverage_data.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+
+        if [ -f pr_info.json ]; then
+          pr_url=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('pr_url', ''))")
+          branch_name=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('branch_name', ''))")
+          echo "pr-url=$pr_url" >> $GITHUB_OUTPUT
+          echo "branch-name=$branch_name" >> $GITHUB_OUTPUT
+        fi
