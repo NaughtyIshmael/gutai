@@ -180,9 +180,11 @@ Repository: {coverage_data.get('repository', 'unknown')}
 Target coverage: {coverage_data.get('target_coverage', 80)}%
 
 Requirements:
-- Use conventional commit format (test: description)
+- Use conventional commit format (test: commit title, body)
+- Make sure there is an empty line after the title
 - Be specific about what's being tested
-- Keep it under 72 characters
+- Keep the title under 72 characters
+- Wrap around the body text at 120 characters
 - Don't mention AI or automation
 - Focus on the testing improvements
 

@@ -45,11 +45,17 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage.json
+coverage_final.json
 *.cover
 *.py,cover
 .hypothesis/
 .pytest_cache/
 cover/
+
+# E2E test artifacts
+.coverage_data/
+tests/test_calculator.py
 
 # Translations
 *.mo

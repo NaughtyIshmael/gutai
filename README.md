@@ -378,6 +378,32 @@ npm run lint
 npm run format
 ```
 
+## 🧪 End-to-End Testing
+
+GUTAI includes a comprehensive E2E test that validates the complete workflow:
+
+```bash
+# Run the full E2E test
+python3 test_e2e.py
+
+# Or use the convenience script
+./run_e2e_test.sh
+
+# With real GitHub Models integration
+export GITHUB_TOKEN="your_token"
+python3 test_e2e.py
+```
+
+The E2E test:
+
+1. 📊 Runs pytest with coverage on sample code
+2. 🔍 Identifies the least covered file
+3. 🤖 Generates new tests using GitHub Models
+4. ✅ Applies tests and validates they pass
+5. 📈 Reports coverage improvement
+
+See [E2E Testing Guide](docs/e2e-testing.md) for detailed information.
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

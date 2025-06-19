@@ -1,3 +1,6 @@
 azure-ai-inference>=1.0.0
 requests>=2.28.0
 PyYAML>=6.0
+pytest>=7.0.0
+pytest-cov>=4.0.0
+coverage>=6.0.0

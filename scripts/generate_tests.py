@@ -173,9 +173,45 @@ class SourceCodeAnalyzer:
 class TestGenerator:
     """Generate unit tests for source code files"""
 
-    def __init__(self, github_token: str, ai_model: str = "openai/gpt-4.1-mini"):
-        self.ai_client = GitHubModelsClient(github_token)
+    def __init__(
+        self, github_token: Optional[str] = None, ai_model: str = "openai/gpt-4.1-mini"
+    ):
         self.ai_model = ai_model
+        if github_token:
+            self.ai_client = GitHubModelsClient(github_token)
+        else:
+            self.ai_client = None
+
+    def generate_tests(
+        self,
+        file_path: str,
+        source_code: str,
+        existing_tests: str = "",
+        prompt: Optional[str] = None,
+    ) -> str:
+        """Generate tests with custom prompt (for E2E testing)"""
+        if not self.ai_client:
+            # Return mock tests if no AI client available
+            return self._generate_mock_tests(file_path, source_code)
+
+        if prompt:
+            # Use custom prompt
+            test_code = self.ai_client.generate_completion(prompt, self.ai_model)
+        else:
+            # Use default prompt generation
+            analyzer = SourceCodeAnalyzer(file_path)
+            analyzer.content = source_code
+            elements = analyzer.extract_code_elements()
+            prompt = self._create_test_generation_prompt(
+                source_code, analyzer.language, elements, 50, file_path, "pytest"
+            )
+            test_code = self.ai_client.generate_completion(prompt, self.ai_model)
+
+        return self._clean_generated_code(test_code)
+
+    def _generate_mock_tests(self, file_path: str, source_code: str) -> str:
+        """Generate mock tests for demonstration purposes"""
+        return "# Mock test generated for demonstration\npass\n"
 
     def generate_tests_for_file(
         self, file_path: str, coverage_percentage: float, test_framework: str = "auto"
@@ -208,6 +244,8 @@ class TestGenerator:
         )
 
         print("Generating tests using GitHub Models...")
+        if not self.ai_client:
+            raise Exception("GitHub token required for AI test generation")
         test_code = self.ai_client.generate_completion(prompt, self.ai_model)
 
         # Clean up the response (remove markdown formatting if present)
