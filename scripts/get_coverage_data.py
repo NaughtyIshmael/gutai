@@ -189,9 +189,8 @@ def scan_local_files(
     languages: List[str],
     exclude_patterns: List[str],
     target_coverage: float,
-    limit: int,
 ) -> List[Tuple[str, float]]:
-    """Fallback: scan local files when no coverage data is available"""
+    """Fallback: return all source files when no coverage data is available"""
     if not languages:
         languages = detect_project_languages()
 
@@ -255,7 +254,7 @@ def scan_local_files(
     # Sort by filename for consistency
     source_files.sort()
 
-    return source_files[:limit]
+    return source_files[]
 
 
 def main():
@@ -309,7 +308,7 @@ def main():
         else:
             print("No coverage data available from Codecov, scanning local files...")
             least_covered = scan_local_files(
-                languages, exclude_patterns, args.target_coverage, args.limit
+                languages, exclude_patterns, args.target_coverage
             )
 
         if least_covered:
