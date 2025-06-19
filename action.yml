@@ -1,6 +1,6 @@
-name: "AI Test Coverage Booster"
+name: "GUTAI - Github Unit Test powered by AI"
 description: "Automatically identify files with low test coverage and generate comprehensive unit tests using AI"
-author: "Your Organization"
+author: "GUTAI Team"
 branding:
   icon: "target"
   color: "green"

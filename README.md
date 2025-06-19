@@ -1,9 +1,11 @@
-# AI Test Coverage Booster 🤖🧪
+# GUTAI 🤖🧪
+
+_Github Unit Test powered by AI_
 
 A GitHub Action that automatically identifies files with low test coverage and generates comprehensive unit tests using AI. Boost your project's test coverage effortlessly with the power of GitHub Models!
 
-[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-AI%20Test%20Coverage%20Booster-blue.svg?colorA=24292e&colorB=0366d6&style=flat&longCache=true&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAM6wAADOsB5dZE0gAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAERSURBVCiRhZG/SsMxFEZPfsVJ61jbxaF0cRQRcRJ9hlYn30IHN/+9iquDCOIsblIrOjqKgy5aKoJQj4n3EQ/TSGlLXzQ5JG/yneb8/OOqJbcEQUBTWyb/MjGwmuDcUaKv/1JuygKr1xXJgk2TJz2BpvfBHVJ5JX/9J8uY9U2+WcmVfUNPU2cHRu5CrVyUakYyzjQEK5KgYILOCa8LMAJQg0Q7aJJRFrYAOGYlBHtjBfBH0/QPZa8D5M0j3C9WEvOFOuPGo9nRCE6Qjo7oRZaZlCt+I2uPILdJXbZrJHoVT8tQJwjqEKGZJdKcCo0W0lGrHgEAkbE8C9E3ILAygCt4RJCBe+k4AAABJRU5ErkJggg==)](https://github.com/marketplace/actions/ai-test-coverage-booster)
-[![CI](https://github.com/your-org/ai-test-coverage-booster/workflows/CI/badge.svg)](https://github.com/your-org/ai-test-coverage-booster/actions)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-GUTAI-blue.svg?colorA=24292e&colorB=0366d6&style=flat&longCache=true&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAM6wAADOsB5dZE0gAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAERSURBVCiRhZG/SsMxFEZPfsVJ61jbxaF0cRQRcRJ9hlYn30IHN/+9iquDCOIsblIrOjqKgy5aKoJQj4n3EQ/TSGlLXzQ5JG/yneb8/OOqJbcEQUBTWyb/MjGwmuDcUaKv/1JuygKr1xXJgk2TJz2BpvfBHVJ5JX/9J8uY9U2+WcmVfUNPU2cHRu5CrVyUakYyzjQEK5KgYILOCa8LMAJQg0Q7aJJRFrYAOGYlBHtjBfBH0/QPZa8D5M0j3C9WEvOFOuPGo9nRCE6Qjo7oRZaZlCt+I2uPILdJXbZrJHoVT8tQJwjqEKGZJdKcCo0W0lGrHgEAkbE8C9E3ILAygCt4RJCBe+k4AAABJRU5ErkJggg==)](https://github.com/marketplace/actions/gutai)
+[![CI](https://github.com/your-org/gutai/workflows/CI/badge.svg)](https://github.com/your-org/gutai/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🚀 Features
@@ -32,8 +34,8 @@ jobs:
   boost-coverage:
     runs-on: ubuntu-latest
     steps:
-      - name: Boost Test Coverage with AI
-        uses: your-org/ai-test-coverage-booster@v1
+      - name: Boost Test Coverage with GUTAI
+        uses: your-org/gutai@v1
         with:
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -82,7 +84,7 @@ That's it! The action will:
 
 ```yaml
 - name: Boost Test Coverage
-  uses: your-org/ai-test-coverage-booster@v1
+  uses: your-org/gutai@v1
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -91,7 +93,7 @@ That's it! The action will:
 
 ```yaml
 - name: Advanced Coverage Boost
-  uses: your-org/ai-test-coverage-booster@v1
+  uses: your-org/gutai@v1
   with:
     codecov-token: ${{ secrets.CODECOV_TOKEN }}
     github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -130,7 +132,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Boost Test Coverage
-        uses: your-org/ai-test-coverage-booster@v1
+        uses: your-org/gutai@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-files: 2
@@ -149,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Boost Test Coverage
-        uses: your-org/ai-test-coverage-booster@v1
+        uses: your-org/gutai@v1
         with:
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -345,7 +347,7 @@ env:
   ACTIONS_STEP_DEBUG: true
 steps:
   - name: Boost Test Coverage (Debug)
-    uses: your-org/ai-test-coverage-booster@v1
+    uses: your-org/gutai@v1
     # ... inputs
 ```
 
@@ -356,8 +358,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Development Setup
 
 ```bash
-git clone https://github.com/your-org/ai-test-coverage-booster
-cd ai-test-coverage-booster
+git clone https://github.com/your-org/gutai
+cd gutai
 npm install
 npm test
 ```
@@ -389,9 +391,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 📖 [Documentation](https://github.com/your-org/ai-test-coverage-booster/wiki)
-- 🐛 [Issues](https://github.com/your-org/ai-test-coverage-booster/issues)
-- 💬 [Discussions](https://github.com/your-org/ai-test-coverage-booster/discussions)
+- 📖 [Documentation](https://github.com/your-org/gutai/wiki)
+- 🐛 [Issues](https://github.com/your-org/gutai/issues)
+- 💬 [Discussions](https://github.com/your-org/gutai/discussions)
 - 📧 [Email Support](mailto:support@yourorg.com)
 
 ---
@@ -402,6 +404,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ⭐ Star this repo if it helped you boost your test coverage!
 
-[Report Bug](https://github.com/your-org/ai-test-coverage-booster/issues) • [Request Feature](https://github.com/your-org/ai-test-coverage-booster/issues) • [Documentation](https://github.com/your-org/ai-test-coverage-booster/wiki)
+[Report Bug](https://github.com/your-org/gutai/issues) • [Request Feature](https://github.com/your-org/gutai/issues) • [Documentation](https://github.com/your-org/gutai/wiki)
 
 </div>

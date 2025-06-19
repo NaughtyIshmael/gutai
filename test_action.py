@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to validate the AI Test Coverage Booster action implementation.
+Test script to validate the GUTAI action implementation.
 """
 
 import os
@@ -201,7 +201,7 @@ def test_readme_content():
 
 def main():
     """Run all tests"""
-    print("🧪 Testing AI Test Coverage Booster Action")
+    print("🧪 Testing GUTAI Action")
     print("=" * 50)
 
     tests = [

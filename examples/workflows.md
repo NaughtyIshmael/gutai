@@ -1,4 +1,4 @@
-# Example workflows for using AI Test Coverage Booster
+# Example workflows for using GUTAI
 
 ## Basic Usage
 
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Boost Test Coverage
-        uses: your-org/ai-test-coverage-booster@v1
+        uses: your-org/gutai@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-files: 3
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Boost Coverage with Custom Settings
-        uses: your-org/ai-test-coverage-booster@v1
+        uses: your-org/gutai@v1
         with:
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Boost Test Coverage
-        uses: your-org/ai-test-coverage-booster@v1
+        uses: your-org/gutai@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-files: 2
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Boost Python Test Coverage
-        uses: your-org/ai-test-coverage-booster@v1
+        uses: your-org/gutai@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           languages: "python"
@@ -122,7 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Boost JavaScript Test Coverage
-        uses: your-org/ai-test-coverage-booster@v1
+        uses: your-org/gutai@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           languages: "javascript,typescript"
