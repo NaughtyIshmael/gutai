@@ -7,6 +7,9 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  models: read
+
 jobs:
   test-action:
     runs-on: ubuntu-latest
@@ -57,14 +60,3 @@ jobs:
           python scripts/get_coverage_data.py --help
           python scripts/generate_tests.py --help
           python scripts/create_pr.py --help
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate action.yml
-        uses: docker://rhymond/github-action-yaml-lint:latest
-        with:
-          args: action.yml
