@@ -254,7 +254,7 @@ def scan_local_files(
     # Sort by filename for consistency
     source_files.sort()
 
-    return source_files[]
+    return source_files
 
 
 def main():
