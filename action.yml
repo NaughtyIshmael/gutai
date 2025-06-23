@@ -144,7 +144,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      if: steps.check-pr.outputs.pr_url == ''
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr == true && steps.generate.outputs.files_processed != '0' }}
       run: |
         if [ -f coverage_data.json ]; then
           python ${{ github.action_path }}/scripts/prepare_pr.py \
@@ -178,7 +178,7 @@ runs:
 
     - name: Create pull request
       id: create-pr
-      if: steps.check-pr.outputs.pr_url == ''
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr == true && steps.pr-info.outputs.pr_title != '' }}
       uses: peter-evans/create-pull-request@v7
       with:
         token: ${{ inputs.github-token }}
