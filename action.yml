@@ -63,9 +63,9 @@ outputs:
   coverage_report:
     value: ${{ steps.streamer.outputs.coverage_report }}
   pr_url:
-    value: ${{ steps.streamer.outputs.pr_url }}
+    value: ${{ steps.check-pr.outputs.pr_url }}
   branch_name:
-    value: ${{ steps.streamer.outputs.branch_name }}
+    value: ${{ steps.check-pr.outputs.branch_name }}
 
 runs:
   using: "composite"
@@ -101,6 +101,7 @@ runs:
     - name: Fetch coverage data
       id: coverage
       shell: bash
+      if: ${{ steps.check-pr.outputs.pr_url == '' }}
       env:
         CODECOV_TOKEN: ${{ inputs.codecov-token }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -120,6 +121,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+      if: ${{ steps.check-pr.outputs.pr_url == '' }}
       run: |
         if [ -f coverage_data.json ]; then
           python ${{ github.action_path }}/scripts/generate_tests.py \
@@ -187,6 +189,7 @@ runs:
     - name: Set outputs
       shell: bash
       id: streamer
+      if: ${{ steps.check-pr.outputs.pr_url == '' }}
       run: |
         if [ -f generated_tests/summary.json ]; then
           files_processed=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('files_processed', 0))")
@@ -203,14 +206,4 @@ runs:
           echo "coverage_report=$coverage_content" >> $GITHUB_OUTPUT
         else
           echo "coverage_report=" >> $GITHUB_OUTPUT
-        fi
-
-        if [ -f pr_info.json ]; then
-          pr_url=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('pr_url', ''))")
-          branch_name=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('branch_name', ''))")
-          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
-          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
-        else
-          echo "pr_url=" >> $GITHUB_OUTPUT
-          echo "branch_name=" >> $GITHUB_OUTPUT
         fi
