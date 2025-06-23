@@ -88,6 +88,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         pr_url=$(gh pr list --state open --json url,headRefName --jq '.[] | select(.headRefName == "${{ inputs.branch }}") | .url' || true)
+        echo pr_url is "$pr_url"
         if [ -n "$pr_url" ]; then
           echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
           echo "branch_name=${{ inputs.branch }}" >> $GITHUB_OUTPUT
@@ -180,6 +181,7 @@ runs:
         token: ${{ inputs.github-token }}
         title: ${{ steps.pr-info.outputs.pr_title }}
         body: ${{steps.pr-info.outputs.pr_body}}
+        branch: ${{ inputs.branch }}
         draft: true
 
     - name: Set outputs
