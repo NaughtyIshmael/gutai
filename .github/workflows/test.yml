@@ -5,6 +5,7 @@ on:
     branches: [master, dev]
   pull_request:
     branches: [master]
+    types: [opened, synchronize, ready_for_review, reopened]
   workflow_dispatch:
 
 permissions:

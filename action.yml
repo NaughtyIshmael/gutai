@@ -42,8 +42,8 @@ inputs:
     description: "Custom title for the pull request (auto-generated if not provided)"
     required: false
     default: ""
-  branch-prefix:
-    description: "Prefix for the branch name"
+  branch:
+    description: "The PR branch name"
     required: false
     default: "coverage-boost"
   ai-model:
@@ -164,6 +164,7 @@ runs:
         token: ${{ inputs.github-token }}
         title: ${{ steps.pr-info.outputs.pr_title }}
         body: ${{steps.pr-info.outputs.pr_body}}
+        draft: true
 
     - name: Set outputs
       shell: bash
