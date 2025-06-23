@@ -141,7 +141,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr }}
       run: |
-        if [ -f coverage_data.json &&  -f generated_tests/summary.json ]; then
+        if [ -f coverage_data.json ] && [ -f generated_tests/summary.json ]; then
           python ${{ github.action_path }}/scripts/prepare_pr.py \
             --coverage-data coverage_data.json \
             --generated-tests generated_tests \
