@@ -170,12 +170,12 @@ runs:
           } >> $GITHUB_OUTPUT
         else
           echo "No tests found, skipping PR preparation"
-          echo "pr_title=''" >> $GITHUB_OUTPUT
+          echo "pr_title=' '" >> $GITHUB_OUTPUT
         fi
 
     - name: Create pull request
       id: create-pr
-      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr && steps.pr-info.outputs.pr_title != '' }}
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr && steps.pr-info.outputs.pr_title != ' ' }}
       uses: peter-evans/create-pull-request@v7
       with:
         token: ${{ inputs.github-token }}
