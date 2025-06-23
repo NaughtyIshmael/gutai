@@ -19,9 +19,11 @@ class CodecovClient:
     def __init__(
         self, github_org: str, github_repo: str, codecov_token: Optional[str] = None
     ):
-        self.github_org = github_org
+        self.github_org = github_org  # GitHub user who owns the codecov_token
         self.github_repo = github_repo
         self.codecov_token = codecov_token
+        self.cov_depth = 8  # Default depth for Codecov tree API
+        self.min_check_lines = 20  # Minimum lines of a file to check coverage
         self.base_url = "https://api.codecov.io"
 
     def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Dict:
@@ -43,14 +45,66 @@ class CodecovClient:
         return response.json()
 
     def get_file_coverage(self, branch: str = "main") -> List[Dict]:
-        """Get coverage data for individual files"""
-        endpoint = f"/repos/{self.github_org}/{self.github_repo}/file"
-        params = {"branch": branch}
-        data = self._make_request(endpoint, params)
+        """Get coverage data for individual files using Codecov v2 API"""
+        url = f"{self.base_url}/api/v2/github/{self.github_org}/repos/{self.github_repo}/report/tree?depth={self.cov_depth}"
 
-        if "files" in data:
-            return data["files"]
-        return []
+        headers = {"accept": "application/json"}
+
+        if self.codecov_token:
+            headers["authorization"] = f"Bearer {self.codecov_token}"
+
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 200:
+            print(
+                f"Warning: Could not fetch coverage data from Codecov: {response.status_code}"
+            )
+            print(f"This might be normal for repositories without coverage reports")
+            return []
+
+        try:
+            data = response.json()
+            files = []
+
+            def extract_files_from_tree(items):
+                """Recursively extract file coverage data from tree structure"""
+                for item in items:
+                    full_path = item.get("full_path", "")
+                    coverage = item.get("coverage", 0.0)
+                    name = item.get("name", "")
+                    lines = item.get("lines", 0)
+
+                    # Check if this is a file (has extension) and if it has no children
+                    is_file = "." in name.split("/")[-1] and not item.get("children")
+
+                    if (
+                        is_file
+                        and lines > self.min_check_lines
+                        and full_path
+                        and coverage is not None
+                    ):
+                        files.append(
+                            {"filename": full_path, "coverage": float(coverage)}
+                        )
+
+                    # Recursively process children if they exist
+                    if "children" in item and item["children"]:
+                        extract_files_from_tree(item["children"])
+
+            # Handle both array response and object with results
+            if isinstance(data, list):
+                extract_files_from_tree(data)
+            elif "results" in data:
+                extract_files_from_tree(data["results"])
+            else:
+                print("Warning: Unexpected response structure from Codecov API")
+
+            return files
+
+        except json.JSONDecodeError:
+            print("Warning: Invalid JSON response from Codecov API")
+            return []
+            return []
 
 
 def detect_project_languages() -> List[str]:
