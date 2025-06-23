@@ -119,22 +119,51 @@ runs:
           exit 0
         fi
 
-    - name: Create pull request
-      id: create-pr
+    - name: Prepare pull request
+      id: pr-info
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+      if: ${{ inputs.create-pr }} == 'true' && ${{steps.generate.outputs.files_processed}} != '0'
       run: |
-        if [ "${{ inputs.create-pr }}" = "true" ] && [ -d generated_tests ]; then
-          python ${{ github.action_path }}/scripts/create_pr.py \
+        if [ -f coverage_data.json ]; then
+          python ${{ github.action_path }}/scripts/prepare_pr.py \
             --coverage-data coverage_data.json \
             --generated-tests generated_tests \
-            --branch-prefix "${{ inputs.branch-prefix }}" \
-            --pr-title "${{ inputs.pr-title }}" \
-            --ai-model "${{ inputs.ai-model }}"
+            --ai-model "${{ inputs.ai-model }}" \
+            --output-file pr_info.json
+          commit_msg=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('commit_message', 'AI Generated Tests'))")
+          pr_title=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('title', 'AI Generated Tests'))")
+          pr_body=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('description', ''))")
+
+          git config --global user.name "GUTAI Action"
+          git config --global user.email "actions-bot@users.noreply.github.com"
+          git add .
+          git commit -asm "$commit_msg"
+
+          {
+            echo "pr_title<<PRTITLE_EOF"
+            echo "$pr_title"
+            echo "PRTITLE_EOF"
+          } >> $GITHUB_OUTPUT
+
+          {
+            echo "pr_body<<PRBODY_EOF"
+            echo "$pr_body"
+            echo "PRBODY_EOF"
+          } >> $GITHUB_OUTPUT
         else
-          echo "Skipping PR creation"
+          echo "No coverage data found, skipping PR preparation"
         fi
+
+    - name: Create pull request
+      id: create-pr
+      if: ${{ inputs.create-pr }} == 'true' && ${{steps.pr_info.outputs.pr_title}} != ""
+      uses: peter-evans/create-pull-request@v7
+      with:
+        token: ${{ inputs.github-token }}
+        title: ${{ steps.pr-info.outputs.pr_title }}
+        body: ${{steps.pr-info.outputs.pr_body}}
 
     - name: Set outputs
       shell: bash

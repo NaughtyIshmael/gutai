@@ -9,6 +9,8 @@ on:
 
 permissions:
   models: read
+  contents: write
+  pull-requests: write
 
 jobs:
   test-action:
@@ -22,9 +24,11 @@ jobs:
         uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-files: 1
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          exclude-patterns: "tests/*,docs/*,examples/*"
+          max-files: 2
           target-coverage: 50
-          create-pr: false
+          create-pr: true
 
       - name: Check outputs
         run: |
@@ -52,16 +56,8 @@ jobs:
 
       - name: Validate Python scripts
         run: |
-          python -m py_compile scripts/get_coverage_data.py
-          python -m py_compile scripts/generate_tests.py
-          python -m py_compile scripts/create_pr.py
+          python -m py_compile scripts/*.py
           echo "All scripts compiled successfully"
-
-      - name: Test script help
-        run: |
-          python scripts/get_coverage_data.py --help
-          python scripts/generate_tests.py --help
-          python scripts/create_pr.py --help
 
   run-unit-tests:
     runs-on: ubuntu-latest

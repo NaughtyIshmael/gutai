@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to create pull request with generated tests.
+Script to prepare pull request with generated tests.
 """
 
 import os
@@ -19,17 +19,16 @@ from azure.core.credentials import AzureKeyCredential
 class GitHubModelsClient:
     """Client to interact with GitHub Models API for generating PR content"""
 
-    def __init__(self, github_token: str):
+    def __init__(self, github_token: str, model: Optional[str] = "openai/gpt-4.1-mini"):
         self.github_token = github_token
+        self.model = model
         self.endpoint = "https://models.github.ai/inference"
         self.client = ChatCompletionsClient(
             endpoint=self.endpoint,
             credential=AzureKeyCredential(github_token),
         )
 
-    def generate_completion(
-        self, prompt: str, model: str = "openai/gpt-4.1-mini"
-    ) -> str:
+    def generate_completion(self, prompt: str) -> str:
         """Generate AI completion using GitHub Models"""
         try:
             response = self.client.complete(
@@ -39,7 +38,7 @@ class GitHubModelsClient:
                     ),
                     UserMessage(prompt),
                 ],
-                model=model,
+                model=self.model,
                 temperature=0.1,
                 top_p=1.0,
                 max_tokens=200,
@@ -49,115 +48,6 @@ class GitHubModelsClient:
 
         except Exception as e:
             raise Exception(f"GitHub Models API error: {str(e)}")
-
-
-class PullRequestCreator:
-    """Create pull request with generated tests"""
-
-    def __init__(self, github_token: str, ai_model: str = "openai/gpt-4.1-mini"):
-        self.github_token = github_token
-        self.ai_client = GitHubModelsClient(github_token)
-        self.ai_model = ai_model
-
-    def create_branch_and_pr(
-        self,
-        coverage_data: Dict,
-        generated_tests: List[Dict],
-        branch_prefix: str,
-        custom_pr_title: str = "",
-    ) -> Dict:
-        """Create branch and pull request with generated tests"""
-
-        # Generate branch name
-        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        branch_name = f"{branch_prefix}-{timestamp}"
-
-        # Configure git
-        subprocess.run(
-            ["git", "config", "--local", "user.email", "action@github.com"], check=True
-        )
-        subprocess.run(
-            ["git", "config", "--local", "user.name", "GitHub Action"], check=True
-        )
-
-        # Create and switch to new branch
-        subprocess.run(["git", "checkout", "-b", branch_name], check=True)
-
-        # Copy generated test files to their target locations
-        self._copy_test_files(generated_tests)
-
-        # Add files to git
-        subprocess.run(["git", "add", "."], check=True)
-
-        # Check if there are changes to commit
-        result = subprocess.run(
-            ["git", "diff", "--staged", "--quiet"], capture_output=True
-        )
-        if result.returncode == 0:
-            print("No changes to commit")
-            return {"success": False, "reason": "no_changes"}
-
-        # Generate commit message and PR title
-        commit_message = self._generate_commit_message(coverage_data, generated_tests)
-        pr_title = custom_pr_title or self._generate_pr_title(
-            coverage_data, generated_tests
-        )
-
-        # Commit changes
-        subprocess.run(["git", "commit", "-m", commit_message], check=True)
-
-        # Push branch
-        subprocess.run(["git", "push", "origin", branch_name], check=True)
-
-        # Create pull request description
-        pr_description = self._generate_pr_description(coverage_data, generated_tests)
-
-        # Create pull request using GitHub CLI
-        pr_result = subprocess.run(
-            [
-                "gh",
-                "pr",
-                "create",
-                "--title",
-                pr_title,
-                "--body",
-                pr_description,
-                "--head",
-                branch_name,
-                "--label",
-                "testing,coverage,automated",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        pr_url = pr_result.stdout.strip()
-
-        # Save PR info
-        pr_info = {
-            "success": True,
-            "pr_url": pr_url,
-            "branch_name": branch_name,
-            "pr_title": pr_title,
-            "commit_message": commit_message,
-        }
-
-        with open("pr_info.json", "w") as f:
-            json.dump(pr_info, f, indent=2)
-
-        print(f"Created pull request: {pr_url}")
-        return pr_info
-
-    def _copy_test_files(self, generated_tests: List[Dict]):
-        """Copy generated test files to their target locations"""
-        for test_info in generated_tests:
-            src_file = test_info["test_file"]
-            if Path(src_file).exists():
-                # Ensure target directory exists
-                target_path = Path(src_file)
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-                print(f"Test file ready: {src_file}")
 
     def _generate_commit_message(
         self, coverage_data: Dict, generated_tests: List[Dict]
@@ -191,7 +81,7 @@ Requirements:
 Generate only the commit message, no explanation."""
 
         try:
-            return self.ai_client.generate_completion(prompt, self.ai_model)
+            return self.generate_completion(prompt)
         except Exception as e:
             print(f"Warning: Could not generate AI commit message: {e}")
             # Fallback commit message
@@ -201,40 +91,7 @@ Generate only the commit message, no explanation."""
     def _generate_pr_title(
         self, coverage_data: Dict, generated_tests: List[Dict]
     ) -> str:
-        """Generate meaningful PR title using AI"""
-
-        # Create context for AI
-        file_names = [
-            Path(test_info["source_file"]).stem for test_info in generated_tests
-        ]
-        avg_coverage = sum(
-            test_info["coverage"] for test_info in generated_tests
-        ) / len(generated_tests)
-
-        prompt = f"""Generate a concise pull request title for adding unit tests to improve code coverage.
-
-Modules being tested: {', '.join(file_names)}
-Average current coverage: {avg_coverage:.1f}%
-Target coverage: {coverage_data.get('target_coverage', 80)}%
-Number of files: {len(generated_tests)}
-
-Requirements:
-- Be descriptive and professional
-- Keep it under 60 characters
-- Don't mention AI or automation
-- Focus on the testing improvements
-- Use action words like "Add", "Improve", "Enhance"
-
-Generate only the title, no explanation."""
-
-        try:
-            return self.ai_client.generate_completion(prompt, self.ai_model)
-        except Exception as e:
-            print(f"Warning: Could not generate AI PR title: {e}")
-            # Fallback PR title
-            return (
-                f"Add unit tests to improve coverage for {len(generated_tests)} modules"
-            )
+        return f"Add unit tests to improve coverage for {len(generated_tests)} modules"
 
     def _generate_pr_description(
         self, coverage_data: Dict, generated_tests: List[Dict]
@@ -272,15 +129,6 @@ This PR adds comprehensive unit tests to improve code coverage for modules with 
 - **Files Improved**: {len(generated_tests)} modules
 - **Test Quality**: Comprehensive coverage including happy path, edge cases, and error scenarios
 
-### ✅ Test Quality Checklist
-
-- [x] Tests cover all public functions and methods
-- [x] Edge cases and error conditions included
-- [x] Descriptive test names following conventions
-- [x] Proper setup and teardown where needed
-- [x] External dependencies mocked appropriately
-- [x] Tests are independent and can run in any order
-
 ### 🔍 Review Notes
 
 Please review the generated tests for:
@@ -299,6 +147,25 @@ The tests have been generated to follow best practices and should significantly 
 
         return description
 
+    def prepare_pr(
+        self,
+        coverage_data: Dict,
+        generated_tests: List[Dict],
+        pr_title: Optional[str] = None,
+    ) -> tuple:
+        """Prepare pull request with generated tests"""
+        # Generate commit message
+        commit_message = self._generate_commit_message(coverage_data, generated_tests)
+
+        # Generate PR title if not provided
+        if not pr_title:
+            pr_title = self._generate_pr_title(coverage_data, generated_tests)
+
+        # Generate PR description
+        pr_description = self._generate_pr_description(coverage_data, generated_tests)
+
+        return commit_message, pr_title, pr_description
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -310,14 +177,16 @@ def main():
     parser.add_argument(
         "--generated-tests", required=True, help="Generated tests directory"
     )
-    parser.add_argument(
-        "--branch-prefix", default="coverage-boost", help="Branch name prefix"
-    )
     parser.add_argument("--pr-title", default="", help="Custom PR title")
     parser.add_argument(
         "--ai-model",
         default="openai/gpt-4.1-mini",
         help="AI model for generating content",
+    )
+    parser.add_argument(
+        "--output-file",
+        default="pr_info.json",
+        help="Output file to save PR title and description",
     )
 
     args = parser.parse_args()
@@ -356,16 +225,14 @@ def main():
 
     # Create PR
     try:
-        pr_creator = PullRequestCreator(github_token, args.ai_model)
-        result = pr_creator.create_branch_and_pr(
-            coverage_data, generated_files, args.branch_prefix, args.pr_title
+        pr_helper = GitHubModelsClient(github_token, args.ai_model)
+        msg, title, body = pr_helper.prepare_pr(
+            coverage_data, generated_files, args.pr_title
         )
 
-        if result["success"]:
-            print(f"Successfully created PR: {result['pr_url']}")
-        else:
-            print(f"Failed to create PR: {result.get('reason', 'unknown error')}")
-            sys.exit(1)
+        # Save title and body to a json file
+        with open(args.output_file, "w") as f:
+            json.dump({"commit_message": msg, "title": title, "description": body}, f)
 
     except Exception as e:
         print(f"Error creating pull request: {e}")
