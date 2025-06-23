@@ -81,6 +81,22 @@ runs:
         python -m pip install --upgrade pip
         pip install azure-ai-inference requests PyYAML
 
+    - name: Check existing pull request
+      id: check-pr
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        pr_url=$(gh pr list --state open --json url,headRefName --jq '.[] | select(.headRefName == "${{ inputs.branch }}") | .url' || true)
+        if [ -n "$pr_url" ]; then
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "branch_name=${{ inputs.branch }}" >> $GITHUB_OUTPUT
+          echo "PR already exists, skipping test generation"
+          exit 0 # Exit early if PR exists
+        else
+          echo "pr_url=" >> $GITHUB_OUTPUT
+          echo "branch_name=" >> $GITHUB_OUTPUT
+        fi
     - name: Fetch coverage data
       id: coverage
       shell: bash
