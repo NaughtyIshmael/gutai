@@ -95,7 +95,7 @@ runs:
           echo "PR already exists, skipping test generation"
           exit 0 # Exit early if PR exists
         else
-          echo "No existing PR found for branch '${{ inputs.branch }}'. Proceeding with test generation."
+          echo "No existing PR found for branch '${{ inputs.branch }}'. Proceeding with test generation. create PR: ${{ inputs.create-pr }}"
           echo "pr_url=" >> $GITHUB_OUTPUT
           echo "branch_name=" >> $GITHUB_OUTPUT
         fi
@@ -132,11 +132,6 @@ runs:
             --ai-model "${{ inputs.ai-model }}" \
             --output-dir generated_tests \
             --output-format "${{ inputs.output-format }}"
-        else
-          echo "No coverage data found, skipping test generation"
-          echo "files-processed=0" >> $GITHUB_OUTPUT
-          echo "tests-generated=0" >> $GITHUB_OUTPUT
-          exit 0
         fi
 
     - name: Prepare pull request
@@ -144,14 +139,15 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr == true && steps.generate.outputs.files_processed != '0' }}
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr }}
       run: |
-        if [ -f coverage_data.json ]; then
+        if [ -f coverage_data.json &&  -f generated_tests/summary.json ]; then
           python ${{ github.action_path }}/scripts/prepare_pr.py \
             --coverage-data coverage_data.json \
             --generated-tests generated_tests \
             --ai-model "${{ inputs.ai-model }}" \
             --output-file pr_info.json
+
           commit_msg=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('commit_message', 'AI Generated Tests'))")
           pr_title=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('title', 'AI Generated Tests'))")
           pr_body=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('description', ''))")
@@ -173,12 +169,13 @@ runs:
             echo "PRBODY_EOF"
           } >> $GITHUB_OUTPUT
         else
-          echo "No coverage data found, skipping PR preparation"
+          echo "No tests found, skipping PR preparation"
+          echo "pr_title=''" >> $GITHUB_OUTPUT
         fi
 
     - name: Create pull request
       id: create-pr
-      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr == true && steps.pr-info.outputs.pr_title != '' }}
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr && steps.pr-info.outputs.pr_title != '' }}
       uses: peter-evans/create-pull-request@v7
       with:
         token: ${{ inputs.github-token }}
