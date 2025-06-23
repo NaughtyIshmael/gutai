@@ -37,7 +37,7 @@ inputs:
   create-pr:
     description: "Whether to create a pull request with generated tests"
     required: false
-    default: "true"
+    default: true
   pr-title:
     description: "Custom title for the pull request (auto-generated if not provided)"
     required: false
@@ -95,13 +95,14 @@ runs:
           echo "PR already exists, skipping test generation"
           exit 0 # Exit early if PR exists
         else
+          echo "No existing PR found for branch '${{ inputs.branch }}'. Proceeding with test generation."
           echo "pr_url=" >> $GITHUB_OUTPUT
           echo "branch_name=" >> $GITHUB_OUTPUT
         fi
     - name: Fetch coverage data
       id: coverage
       shell: bash
-      if: ${{ steps.check-pr.outputs.pr_url == '' }}
+      if: steps.check-pr.outputs.pr_url == ''
       env:
         CODECOV_TOKEN: ${{ inputs.codecov-token }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -121,7 +122,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      if: ${{ steps.check-pr.outputs.pr_url == '' }}
+      if: steps.check-pr.outputs.pr_url == ''
       run: |
         if [ -f coverage_data.json ]; then
           python ${{ github.action_path }}/scripts/generate_tests.py \
@@ -143,7 +144,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      if: ${{ steps.check-pr.outputs.pr_url == '' }} && ${{ inputs.create-pr }} == 'true' && ${{steps.generate.outputs.files_processed}} != '0'
+      if: steps.check-pr.outputs.pr_url == ''
       run: |
         if [ -f coverage_data.json ]; then
           python ${{ github.action_path }}/scripts/prepare_pr.py \
@@ -177,7 +178,7 @@ runs:
 
     - name: Create pull request
       id: create-pr
-      if: ${{ steps.check-pr.outputs.pr_url == '' }} && ${{ inputs.create-pr }} == 'true' && ${{steps.pr_info.outputs.pr_title}} != ""
+      if: steps.check-pr.outputs.pr_url == ''
       uses: peter-evans/create-pull-request@v7
       with:
         token: ${{ inputs.github-token }}
@@ -189,7 +190,7 @@ runs:
     - name: Set outputs
       shell: bash
       id: streamer
-      if: ${{ steps.check-pr.outputs.pr_url == '' }}
+      if: steps.check-pr.outputs.pr_url == ''
       run: |
         if [ -f generated_tests/summary.json ]; then
           files_processed=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('files_processed', 0))")
