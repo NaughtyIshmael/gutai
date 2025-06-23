@@ -95,7 +95,7 @@ runs:
           echo "PR already exists, skipping test generation"
           exit 0 # Exit early if PR exists
         else
-          echo "No existing PR found for branch '${{ inputs.branch }}'. Proceeding with test generation."
+          echo "No existing PR found for branch '${{ inputs.branch }}'. Proceeding with test generation. create PR: ${{ inputs.create-pr }}"
           echo "pr_url=" >> $GITHUB_OUTPUT
           echo "branch_name=" >> $GITHUB_OUTPUT
         fi
@@ -144,7 +144,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr == true && steps.generate.outputs.files_processed != '0' }}
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr }}
       run: |
         if [ -f coverage_data.json ]; then
           python ${{ github.action_path }}/scripts/prepare_pr.py \
@@ -178,7 +178,7 @@ runs:
 
     - name: Create pull request
       id: create-pr
-      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr == true && steps.pr-info.outputs.pr_title != '' }}
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr }}
       uses: peter-evans/create-pull-request@v7
       with:
         token: ${{ inputs.github-token }}
