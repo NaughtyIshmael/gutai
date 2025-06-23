@@ -37,13 +37,13 @@ inputs:
   create-pr:
     description: "Whether to create a pull request with generated tests"
     required: false
-    default: "true"
+    default: true
   pr-title:
     description: "Custom title for the pull request (auto-generated if not provided)"
     required: false
     default: ""
-  branch-prefix:
-    description: "Prefix for the branch name"
+  branch:
+    description: "The PR branch name"
     required: false
     default: "coverage-boost"
   ai-model:
@@ -63,9 +63,9 @@ outputs:
   coverage_report:
     value: ${{ steps.streamer.outputs.coverage_report }}
   pr_url:
-    value: ${{ steps.streamer.outputs.pr_url }}
+    value: ${{ steps.check-pr.outputs.pr_url }}
   branch_name:
-    value: ${{ steps.streamer.outputs.branch_name }}
+    value: ${{ steps.check-pr.outputs.branch_name }}
 
 runs:
   using: "composite"
@@ -81,9 +81,28 @@ runs:
         python -m pip install --upgrade pip
         pip install azure-ai-inference requests PyYAML
 
+    - name: Check existing pull request
+      id: check-pr
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        pr_url=$(gh pr list --state open --json url,headRefName --jq '.[] | select(.headRefName == "${{ inputs.branch }}") | .url' || true)
+        echo pr_url is "$pr_url"
+        if [ -n "$pr_url" ]; then
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+          echo "branch_name=${{ inputs.branch }}" >> $GITHUB_OUTPUT
+          echo "PR already exists, skipping test generation"
+          exit 0 # Exit early if PR exists
+        else
+          echo "No existing PR found for branch '${{ inputs.branch }}'. Proceeding with test generation. create PR: ${{ inputs.create-pr }}"
+          echo "pr_url=" >> $GITHUB_OUTPUT
+          echo "branch_name=" >> $GITHUB_OUTPUT
+        fi
     - name: Fetch coverage data
       id: coverage
       shell: bash
+      if: steps.check-pr.outputs.pr_url == ''
       env:
         CODECOV_TOKEN: ${{ inputs.codecov-token }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -103,6 +122,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+      if: steps.check-pr.outputs.pr_url == ''
       run: |
         if [ -f coverage_data.json ]; then
           python ${{ github.action_path }}/scripts/generate_tests.py \
@@ -112,33 +132,62 @@ runs:
             --ai-model "${{ inputs.ai-model }}" \
             --output-dir generated_tests \
             --output-format "${{ inputs.output-format }}"
+        fi
+
+    - name: Prepare pull request
+      id: pr-info
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr }}
+      run: |
+        if [ -f coverage_data.json &&  -f generated_tests/summary.json ]; then
+          python ${{ github.action_path }}/scripts/prepare_pr.py \
+            --coverage-data coverage_data.json \
+            --generated-tests generated_tests \
+            --ai-model "${{ inputs.ai-model }}" \
+            --output-file pr_info.json
+
+          commit_msg=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('commit_message', 'AI Generated Tests'))")
+          pr_title=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('title', 'AI Generated Tests'))")
+          pr_body=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('description', ''))")
+
+          git config --global user.name "GUTAI Action"
+          git config --global user.email "actions-bot@users.noreply.github.com"
+          git add .
+          git commit -asm "$commit_msg"
+
+          {
+            echo "pr_title<<PRTITLE_EOF"
+            echo "$pr_title"
+            echo "PRTITLE_EOF"
+          } >> $GITHUB_OUTPUT
+
+          {
+            echo "pr_body<<PRBODY_EOF"
+            echo "$pr_body"
+            echo "PRBODY_EOF"
+          } >> $GITHUB_OUTPUT
         else
-          echo "No coverage data found, skipping test generation"
-          echo "files-processed=0" >> $GITHUB_OUTPUT
-          echo "tests-generated=0" >> $GITHUB_OUTPUT
-          exit 0
+          echo "No tests found, skipping PR preparation"
+          echo "pr_title=''" >> $GITHUB_OUTPUT
         fi
 
     - name: Create pull request
       id: create-pr
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        if [ "${{ inputs.create-pr }}" = "true" ] && [ -d generated_tests ]; then
-          python ${{ github.action_path }}/scripts/create_pr.py \
-            --coverage-data coverage_data.json \
-            --generated-tests generated_tests \
-            --branch-prefix "${{ inputs.branch-prefix }}" \
-            --pr-title "${{ inputs.pr-title }}" \
-            --ai-model "${{ inputs.ai-model }}"
-        else
-          echo "Skipping PR creation"
-        fi
+      if: ${{ steps.check-pr.outputs.pr_url == '' && inputs.create-pr && steps.pr-info.outputs.pr_title != '' }}
+      uses: peter-evans/create-pull-request@v7
+      with:
+        token: ${{ inputs.github-token }}
+        title: ${{ steps.pr-info.outputs.pr_title }}
+        body: ${{steps.pr-info.outputs.pr_body}}
+        branch: ${{ inputs.branch }}
+        draft: true
 
     - name: Set outputs
       shell: bash
       id: streamer
+      if: steps.check-pr.outputs.pr_url == ''
       run: |
         if [ -f generated_tests/summary.json ]; then
           files_processed=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('files_processed', 0))")
@@ -155,14 +204,4 @@ runs:
           echo "coverage_report=$coverage_content" >> $GITHUB_OUTPUT
         else
           echo "coverage_report=" >> $GITHUB_OUTPUT
-        fi
-
-        if [ -f pr_info.json ]; then
-          pr_url=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('pr_url', ''))")
-          branch_name=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('branch_name', ''))")
-          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
-          echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
-        else
-          echo "pr_url=" >> $GITHUB_OUTPUT
-          echo "branch_name=" >> $GITHUB_OUTPUT
         fi

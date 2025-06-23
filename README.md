@@ -30,6 +30,11 @@ on:
     - cron: "0 2 * * 0" # Weekly on Sundays
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
 jobs:
   boost-coverage:
     runs-on: ubuntu-latest
@@ -42,6 +47,21 @@ jobs:
           max-files: 3
           target-coverage: 80
           create-pr: true
+```
+
+### Workflow permissions
+
+For this action to work you must explicitly allow GitHub Actions to create pull requests. This setting can be found in a repository's settings under Actions > General > Workflow permissions.
+
+For repositories belonging to an organization, this setting can be managed by admins in organization settings under Actions > General > Workflow permissions.
+
+The workflow permissions should be set to `Read and write permissions` for the `contents` and `pull-requests` scopes, and `Read` for the `models` scope:
+
+```yaml
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
 ```
 
 That's it! The action will:
@@ -64,7 +84,7 @@ That's it! The action will:
 | `test-framework`   | Preferred test framework (auto-detected if not specified)          | No       | `auto`                |
 | `create-pr`        | Whether to create a pull request with generated tests              | No       | `true`                |
 | `pr-title`         | Custom title for the pull request (auto-generated if not provided) | No       | `auto-generated`      |
-| `branch-prefix`    | Prefix for the branch name                                         | No       | `coverage-boost`      |
+| `branch`           | The PR branch name                                                 | No       | `coverage-boost`      |
 | `ai-model`         | GitHub Models AI model to use                                      | No       | `openai/gpt-4.1-mini` |
 | `output-format`    | Output format for test generation report                           | No       | `json`                |
 
@@ -83,6 +103,11 @@ That's it! The action will:
 ### Basic Usage (Minimal Setup)
 
 ```yaml
+permissions:
+  models: read
+  contents: write
+  pull-requests: write
+
 - name: Boost Test Coverage
   uses: NaughtyIshmael/gutai@v1
   with:
@@ -92,6 +117,11 @@ That's it! The action will:
 ### Advanced Configuration
 
 ```yaml
+permissions:
+  models: read
+  contents: write
+  pull-requests: write
+
 - name: Advanced Coverage Boost
   uses: NaughtyIshmael/gutai@v1
   with:
@@ -105,59 +135,6 @@ That's it! The action will:
     ai-model: "openai/gpt-4.1-mini"
     pr-title: "Improve test coverage for core modules"
     branch-prefix: "coverage-improvement"
-```
-
-### Integration with Existing Workflow
-
-```yaml
-name: CI/CD Pipeline
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run tests
-        run: npm test
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage/lcov.info
-
-  boost-coverage:
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Boost Test Coverage
-        uses: NaughtyIshmael/gutai@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-files: 2
-```
-
-### Scheduled Coverage Improvement
-
-```yaml
-name: Weekly Coverage Boost
-on:
-  schedule:
-    - cron: "0 9 * * 1" # Every Monday at 9 AM
-
-jobs:
-  weekly-coverage-boost:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Boost Test Coverage
-        uses: NaughtyIshmael/gutai@v1
-        with:
-          codecov-token: ${{ secrets.CODECOV_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-files: 10
-          target-coverage: 85
-          pr-title: "Weekly test coverage improvements - {{date}}"
 ```
 
 ## 🎯 Supported Languages & Frameworks
@@ -178,13 +155,11 @@ jobs:
 
 ### Required Setup
 
-1. **Codecov Integration**: Your repository should upload coverage reports to [Codecov](https://codecov.io)
-2. **GitHub Token**: The action needs a GitHub token with appropriate permissions
-3. **Repository Permissions**: Enable "Read and write permissions" for GitHub Actions
-
-### Optional Setup
-
-- **Codecov Token**: For private repositories or better rate limits, add your Codecov token as a repository secret
+1. **Codecov Integration**: Your repository should upload coverage reports to [Codecov](https://codecov.io), and provide a valid Codecov token via the `codecov-token` input.
+2. **GitHub Token**: The action needs a GitHub token with appropriate permissions which can be provided via the `github-token` input. This token is used to create pull requests and access the GitHub Models API.
+   - With `GITHUB_TOKEN` in `${{ secrets.GITHUB_TOKEN }}`, the created PR will not trigger new workflows as limited by Github.
+   - If you want to trigger workflows from the created PR, create a personal access token and pass it via `github-token` input. You should ensure that it has the `repo` scope to allow the action to create pull requests and access the Models API.
+3. **Repository Permissions**: [Enable proper permissions for GitHub Actions](#workflow-permissions).
 
 ## 📊 How It Works
 
@@ -210,81 +185,6 @@ graph TD
 4. **🤖 Test Generation**: Uses GitHub Models via Azure AI Inference SDK to generate comprehensive test cases with contextually appropriate PR titles and commit messages
 5. **✅ Validation**: Validates generated tests for syntax and basic structure
 6. **🔄 Integration**: Creates a new branch and pull request with meaningful, auto-generated descriptions
-7. **📋 Reporting**: Provides detailed reports on the coverage improvement process
-
-## 🎨 Generated Content Quality
-
-The action generates high-quality tests and meaningful commit messages that include:
-
-### Generated Tests
-
-- **✅ Happy Path Testing**: Normal use cases and expected scenarios
-- **🚨 Error Handling**: Exception cases and error conditions
-- **🎯 Edge Cases**: Boundary values and corner cases
-- **🔒 Input Validation**: Testing with invalid or unexpected inputs
-- **🎭 Mocking**: Appropriate mocking of external dependencies
-- **📝 Documentation**: Clear test names and documentation
-- **🧪 Best Practices**: Following language-specific testing conventions
-
-### Auto-Generated PR Titles & Commit Messages
-
-- **📝 Context-Aware**: Analyzes the codebase to create relevant titles
-- **🎯 Descriptive**: Clearly describes what functionality is being tested
-- **📊 Data-Driven**: Includes coverage statistics and file information
-- **🏷️ Professional**: Uses conventional commit style and clear language
-- **🔄 Dynamic**: Adapts to the specific files and functions being tested
-
-Example auto-generated content:
-
-- **PR Title**: "Add comprehensive tests for user authentication module"
-- **Commit Message**: "test: enhance coverage for auth utilities and validation functions"
-
-### Example Generated Test (Python)
-
-```python
-import pytest
-from unittest.mock import Mock, patch
-from myproject.calculator import Calculator
-
-class TestCalculator:
-
-    def test_add_positive_numbers(self):
-        """Test addition with positive numbers."""
-        calc = Calculator()
-        result = calc.add(5, 3)
-        assert result == 8
-
-    def test_add_negative_numbers(self):
-        """Test addition with negative numbers."""
-        calc = Calculator()
-        result = calc.add(-5, -3)
-        assert result == -8
-
-    def test_divide_by_zero_raises_exception(self):
-        """Test that division by zero raises appropriate exception."""
-        calc = Calculator()
-        with pytest.raises(ValueError, match="Division by zero"):
-            calc.divide(10, 0)
-
-    @pytest.mark.parametrize("a,b,expected", [
-        (0, 5, 5),
-        (10, 0, 10),
-        (-1, 1, 0),
-        (100, -50, 50)
-    ])
-    def test_add_edge_cases(self, a, b, expected):
-        """Test addition with various edge cases."""
-        calc = Calculator()
-        assert calc.add(a, b) == expected
-```
-
-## 🛡️ Security & Privacy
-
-- **🔒 Secure**: Uses official GitHub APIs with proper authentication
-- **🕵️ Private**: Code analysis happens in your GitHub Actions runner
-- **🚫 No Data Storage**: No source code is stored or transmitted to third parties
-- **✅ Audit Trail**: All operations are logged in GitHub Actions
-- **🔐 Token Scope**: Requires minimal permissions (contents:write, pull-requests:write)
 
 ## 🐛 Troubleshooting
 
@@ -355,29 +255,6 @@ steps:
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Development Setup
-
-```bash
-git clone https://github.com/NaughtyIshmael/gutai
-cd gutai
-npm install
-npm test
-```
-
-### Testing
-
-```bash
-# Run unit tests
-npm test
-
-# Test with example repository
-npm run test:integration
-
-# Lint and format
-npm run lint
-npm run format
-```
-
 ## 🧪 End-to-End Testing
 
 GUTAI includes a comprehensive E2E test that validates the complete workflow:
@@ -420,7 +297,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 📖 [Documentation](https://github.com/NaughtyIshmael/gutai/wiki)
 - 🐛 [Issues](https://github.com/NaughtyIshmael/gutai/issues)
 - 💬 [Discussions](https://github.com/NaughtyIshmael/gutai/discussions)
-- 📧 [Email Support](mailto:support@yourorg.com)
 
 ---
 
