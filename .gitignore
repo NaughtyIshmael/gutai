@@ -52,6 +52,7 @@ coverage_final.json
 .hypothesis/
 .pytest_cache/
 cover/
+*/target/
 
 # E2E test artifacts
 .coverage_data/

@@ -139,17 +139,12 @@ permissions:
 
 ## 🎯 Supported Languages & Frameworks
 
-| Language       | Test Frameworks      | Coverage Tools          |
-| -------------- | -------------------- | ----------------------- |
-| **Python**     | pytest, unittest     | coverage.py, pytest-cov |
-| **JavaScript** | Jest, Mocha, Jasmine | Jest, nyc, c8           |
-| **TypeScript** | Jest, Mocha, Vitest  | Jest, nyc, c8           |
-| **Java**       | JUnit, TestNG        | JaCoCo, Cobertura       |
-| **C#**         | NUnit, xUnit, MSTest | coverlet, dotCover      |
-| **Go**         | testing (built-in)   | go test -cover          |
-| **Rust**       | cargo test           | tarpaulin, grcov        |
-| **Ruby**       | RSpec, Minitest      | SimpleCov               |
-| **PHP**        | PHPUnit              | PHPUnit, Xdebug         |
+| Language   | Test Frameworks    | Coverage Tools          |
+| ---------- | ------------------ | ----------------------- |
+| **Python** | pytest, unittest   | coverage.py, pytest-cov |
+| **Java**   | JUnit, TestNG      | JaCoCo, Cobertura       |
+| **Go**     | testing (built-in) | go test -cover          |
+| **Rust**   | cargo test         | tarpaulin, grcov        |
 
 ## 🔧 Prerequisites
 
