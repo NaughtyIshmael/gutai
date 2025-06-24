@@ -1,16 +1,16 @@
 #!/bin/bash
 # E2E Test Runner for GUTAI
 
-echo "🚀 Running GUTAI End-to-End Test Suite"
-echo "======================================="
+echo "🚀 Running GUTAI Python End-to-End Test Suite"
+echo "=============================================="
 
 # Install dependencies
 echo "📦 Installing dependencies..."
 pip install -r requirements.txt
 
-# Run the E2E test
-echo "🧪 Starting E2E test workflow..."
-python3 test_e2e.py
+# Run the Python E2E test
+echo "🧪 Starting Python E2E test workflow..."
+python3 test_python_e2e.py
 
 exit_code=$?
 
