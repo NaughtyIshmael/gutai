@@ -14,7 +14,7 @@ A GitHub Action that automatically identifies files with low test coverage and g
 - **🤖 AI-Powered Test Generation**: Uses GitHub Models to generate comprehensive, context-aware unit tests
 - **📝 Smart PR Creation**: Auto-generates meaningful PR titles and commit messages based on code analysis
 - **🎯 Intelligent Targeting**: Identifies and prioritizes files with the lowest test coverage
-- **🌍 Multi-Language Support**: Works with Python, JavaScript, TypeScript, Java, C++, C#, Go, Rust, Ruby, PHP
+- **🌍 Multi-Language Support**: Generates unit tests for Python, Go, and Rust projects
 - **📦 Zero Configuration**: Works out of the box with sensible defaults
 - **🔄 Flexible Integration**: Use as a standalone action or integrate into existing workflows
 - **📊 Detailed Reporting**: Provides comprehensive coverage analysis and test generation reports
@@ -79,7 +79,7 @@ That's it! The action will:
 | `github-token`     | GitHub token for API access and PR creation                        | Yes      | `${{ github.token }}` |
 | `max-files`        | Maximum number of files to process                                 | No       | `3`                   |
 | `target-coverage`  | Only process files below this coverage %                           | No       | `80`                  |
-| `languages`        | Comma-separated list of languages to include                       | No       | `auto-detect`         |
+| `languages`        | Comma-separated list of languages to include (python,go,rust)      | No       | `auto-detect`         |
 | `exclude-patterns` | Comma-separated glob patterns to exclude                           | No       | `test*,spec*,*_test*` |
 | `test-framework`   | Preferred test framework (auto-detected if not specified)          | No       | `auto`                |
 | `create-pr`        | Whether to create a pull request with generated tests              | No       | `true`                |
@@ -129,7 +129,7 @@ permissions:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     max-files: 5
     target-coverage: 75
-    languages: "python,javascript,typescript"
+    languages: "python,go,rust"
     exclude-patterns: "migrations/*,vendor/*,node_modules/*"
     test-framework: "pytest"
     ai-model: "openai/gpt-4.1-mini"
@@ -139,22 +139,33 @@ permissions:
 
 ## 🎯 Supported Languages & Frameworks
 
-| Language   | Test Frameworks    | Coverage Tools          |
-| ---------- | ------------------ | ----------------------- |
-| **Python** | pytest, unittest   | coverage.py, pytest-cov |
-| **Java**   | JUnit, TestNG      | JaCoCo, Cobertura       |
-| **Go**     | testing (built-in) | go test -cover          |
-| **Rust**   | cargo test         | tarpaulin, grcov        |
+GUTAI currently supports unit test generation for the following languages:
+
+| Language   | Test Frameworks    | Coverage Tools          | Status       |
+| ---------- | ------------------ | ----------------------- | ------------ |
+| **Python** | pytest, unittest   | coverage.py, pytest-cov | ✅ Supported |
+| **Go**     | testing (built-in) | go test -cover          | ✅ Supported |
+| **Rust**   | cargo test         | tarpaulin, grcov        | ✅ Supported |
+
+### Language Support Notes
+
+- **Python**: Full support for pytest and unittest frameworks with comprehensive test generation
+- **Go**: Native support for Go's built-in testing package with proper test file structure
+- **Rust**: Support for Cargo's test framework with unit and integration test generation
+
+Other languages are detected for coverage analysis but unit test generation is only available for Python, Go, and Rust projects.
 
 ## 🔧 Prerequisites
 
 ### Required Setup
 
 1. **Codecov Integration**: Your repository should upload coverage reports to [Codecov](https://codecov.io), and provide a valid Codecov token via the `codecov-token` input.
-2. **GitHub Token**: The action needs a GitHub token with appropriate permissions which can be provided via the `github-token` input. This token is used to create pull requests and access the GitHub Models API.
+2. **Supported Languages**: GUTAI generates unit tests for Python, Go, and Rust projects. Other languages are analyzed for coverage but tests are not generated.
+3. **GitHub Token**: The action needs a GitHub token with appropriate permissions which can be provided via the `github-token` input. This token is used to create pull requests and access the GitHub Models API.
+4. **GitHub Token**: The action needs a GitHub token with appropriate permissions which can be provided via the `github-token` input. This token is used to create pull requests and access the GitHub Models API.
    - With `GITHUB_TOKEN` in `${{ secrets.GITHUB_TOKEN }}`, the created PR will not trigger new workflows as limited by Github.
    - If you want to trigger workflows from the created PR, create a personal access token and pass it via `github-token` input. You should ensure that it has the `repo` scope to allow the action to create pull requests and access the Models API.
-3. **Repository Permissions**: [Enable proper permissions for GitHub Actions](#workflow-permissions).
+5. **Repository Permissions**: [Enable proper permissions for GitHub Actions](#workflow-permissions).
 
 ## 📊 How It Works
 
@@ -215,6 +226,22 @@ graph TD
 1. Verify `github-token` has correct permissions
 2. Check GitHub Models availability
 3. Use `gpt-4o-mini` for better rate limits
+</details>
+
+<details>
+<summary><strong>❌ "No tests generated for my language"</strong></summary>
+
+**Possible causes:**
+
+- Language not supported for test generation
+- Project structure not recognized
+
+**Solutions:**
+
+1. Verify your project uses Python, Go, or Rust (only supported languages)
+2. Check that your project follows standard conventions for the language
+3. Ensure source files are in expected locations (e.g., `src/` for Rust, `*.go` for Go)
+4. Use `languages` input to explicitly specify: `python`, `go`, or `rust`
 </details>
 
 <details>
