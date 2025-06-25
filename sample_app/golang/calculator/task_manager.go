@@ -58,9 +58,11 @@ func (tm *TaskManager) GetTask(id int) (*Task, error) {
 	return nil, errors.New("task not found")
 }
 
-// GetAllTasks returns all tasks
+// GetAllTasks returns all tasks (copy to prevent external modifications)
 func (tm *TaskManager) GetAllTasks() []Task {
-	return tm.tasks
+	tasksCopy := make([]Task, len(tm.tasks))
+	copy(tasksCopy, tm.tasks)
+	return tasksCopy
 }
 
 // GetCompletedTasks returns only completed tasks

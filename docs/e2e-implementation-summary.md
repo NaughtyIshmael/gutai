@@ -42,7 +42,7 @@ Successfully implemented a comprehensive End-to-End test case for GUTAI that val
 
 ### 3. AI Test Generation
 
-- ✅ Integrates with GitHub Models via Azure AI Inference SDK
+- ✅ Integrates with GitHub Models via AI Inference SDK
 - ✅ Falls back to mock generation when GitHub token unavailable
 - ✅ Generates contextual test cases based on source code analysis
 - ✅ Creates comprehensive test coverage for missing scenarios
@@ -135,7 +135,7 @@ python3 test_e2e.py
 ### Technical Validation
 
 - ✅ Python imports and module resolution
-- ✅ Azure AI Inference SDK integration
+- ✅ AI Inference SDK integration
 - ✅ Pytest framework compatibility
 - ✅ Coverage tool integration
 - ✅ Error handling and edge cases

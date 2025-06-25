@@ -188,7 +188,7 @@ graph TD
 1. **📡 Coverage Analysis**: Fetches coverage data from Codecov API
 2. **🔍 File Identification**: Identifies source files with coverage below the target threshold
 3. **🧠 Code Analysis**: Analyzes code structure (functions, classes, methods)
-4. **🤖 Test Generation**: Uses GitHub Models via Azure AI Inference SDK to generate comprehensive test cases with contextually appropriate PR titles and commit messages
+4. **🤖 Test Generation**: Uses GitHub Models via AI Inference SDK to generate comprehensive test cases with contextually appropriate PR titles and commit messages
 5. **✅ Validation**: Validates generated tests for syntax and basic structure
 6. **🔄 Integration**: Creates a new branch and pull request with meaningful, auto-generated descriptions
 

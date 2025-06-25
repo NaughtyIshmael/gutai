@@ -57,6 +57,7 @@ cover/
 # E2E test artifacts
 .coverage_data/
 sample_app/*/tests/
+tests/e2e/
 
 # Translations
 *.mo

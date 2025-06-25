@@ -1,6 +1,6 @@
-# Azure AI Inference Integration Example
+# AI Inference Integration Example
 
-This action now uses the Azure AI Inference SDK to communicate with GitHub Models, providing better error handling and type safety.
+This action now uses the AI Inference SDK to communicate with GitHub Models, providing better error handling and type safety.
 
 ## Integration Details
 
@@ -50,7 +50,7 @@ The action now uses `openai/gpt-4.1-mini` by default, which provides:
 - Faster response times
 - Lower token usage
 
-## Benefits of Azure AI Inference SDK
+## Benefits of AI Inference SDK
 
 1. **Type Safety**: Strongly typed request/response objects
 2. **Error Handling**: Better exception handling and error messages
@@ -60,7 +60,7 @@ The action now uses `openai/gpt-4.1-mini` by default, which provides:
 
 ## Migration from Direct HTTP
 
-The action has been updated from direct HTTP requests to the Azure AI Inference SDK:
+The action has been updated from direct HTTP requests to the AI Inference SDK:
 
 ### Before (HTTP)
 

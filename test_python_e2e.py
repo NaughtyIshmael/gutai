@@ -5,7 +5,7 @@ GUTAI Python End-to-End Test Suite
 This script performs a complete E2E test of the GUTAI workflow for Python projects:
 1. Runs pytest locally to generate code coverage data for Python sample app
 2. Identifies the least covered file
-3. Calls Azure AI to generate additional unit tests
+3. Calls AI to generate additional unit tests
 4. Applies the generated tests to the sample_app/python/tests directory
 5. Runs tests again to verify the new tests pass
 6. Validates improved coverage
@@ -193,8 +193,8 @@ def test_add(calculator):
     def generate_additional_tests(
         self, source_file: str, source_code: str, existing_tests: str
     ) -> str:
-        """Generate additional tests using Azure AI."""
-        print("🤖 Generating additional tests using Azure AI...")
+        """Generate additional tests using AI."""
+        print("🤖 Generating additional tests using AI...")
 
         try:
             generator = TestGenerator(os.getenv("GITHUB_TOKEN"))
@@ -233,7 +233,7 @@ Include the necessary imports at the top if adding new test functions.
                 prompt=prompt,
             )
 
-            print("✅ Tests generated successfully using Azure AI")
+            print("✅ Tests generated successfully using AI")
             return generated_tests
 
         except Exception as e:
