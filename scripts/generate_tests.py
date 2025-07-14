@@ -14,6 +14,47 @@ from typing import Dict, List, Optional, Any
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
+import requests
+
+
+class DeepSeekClient:
+    """Client to interact with DeepSeek API"""
+
+    def __init__(self, deepseek_token: str):
+        self.deepseek_token = deepseek_token
+        self.endpoint = "https://api.deepseek.com/chat/completions"
+
+    def generate_completion(self, prompt: str, model: str = "deepseek-chat") -> str:
+        """Generate AI completion using DeepSeek API"""
+        try:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.deepseek_token}",
+            }
+
+            payload = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are an expert software engineer specializing in writing comprehensive unit tests. Generate clean, well-documented, and thorough test cases that follow best practices for the given programming language. Do not include any explanatory text, just return the test code.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.0,
+                "top_p": 1.0,
+                "max_tokens": 4096,
+                "stream": False,
+            }
+
+            response = requests.post(self.endpoint, headers=headers, json=payload)
+            response.raise_for_status()
+
+            response_data = response.json()
+            return response_data["choices"][0]["message"]["content"]
+
+        except Exception as e:
+            raise Exception(f"DeepSeek API error: {str(e)}")
 
 
 class GitHubModelsClient:
@@ -40,7 +81,7 @@ class GitHubModelsClient:
                     UserMessage(prompt),
                 ],
                 model=model,
-                temperature=0.2,
+                temperature=0.0,
                 top_p=1.0,
                 max_tokens=4096,
             )
@@ -174,11 +215,26 @@ class TestGenerator:
     """Generate unit tests for source code files"""
 
     def __init__(
-        self, github_token: Optional[str] = None, ai_model: str = "openai/gpt-4.1-mini"
+        self,
+        github_token: Optional[str] = None,
+        deepseek_token: Optional[str] = None,
+        ai_model: str = "openai/gpt-4.1-mini",
+        provider: str = "github",
     ):
         self.ai_model = ai_model
-        if github_token:
+        self.provider = provider
+
+        if provider == "github" and github_token:
             self.ai_client = GitHubModelsClient(github_token)
+        elif provider == "deepseek" and deepseek_token:
+            self.ai_client = DeepSeekClient(deepseek_token)
+            # Update model for DeepSeek if using GitHub model name
+            if ai_model.startswith("openai/"):
+                self.ai_model = "deepseek-chat"
+        elif provider == "deepseek" and not deepseek_token:
+            raise ValueError("DeepSeek token is required when using DeepSeek provider")
+        elif provider == "github" and not github_token:
+            raise ValueError("GitHub token is required when using GitHub provider")
         else:
             self.ai_client = None
 
@@ -246,9 +302,11 @@ class TestGenerator:
             test_framework,
         )
 
-        print("Generating tests using GitHub Models...")
+        print(f"Generating tests using {self.provider.title()} Models...")
         if not self.ai_client:
-            raise Exception("GitHub token required for AI test generation")
+            raise Exception(
+                f"{self.provider.title()} token required for AI test generation"
+            )
         test_code = self.ai_client.generate_completion(prompt, self.ai_model)
 
         # Clean up the response (remove markdown formatting if present)
@@ -373,17 +431,42 @@ def main():
         "--ai-model", default="openai/gpt-4.1-mini", help="AI model to use"
     )
     parser.add_argument(
+        "--provider",
+        choices=["github", "deepseek"],
+        default="github",
+        help="AI provider to use (github or deepseek)",
+    )
+    parser.add_argument(
         "--output-dir", default="generated_tests", help="Output directory"
     )
     parser.add_argument("--output-format", default="json", help="Output format")
 
     args = parser.parse_args()
 
-    # Get GitHub token
+    # Get tokens based on provider
     github_token = os.getenv("GITHUB_TOKEN")
-    if not github_token:
-        print("Error: GITHUB_TOKEN environment variable is required")
-        sys.exit(1)
+    deepseek_token = os.getenv("DEEPSEEK_TOKEN")
+
+    if args.provider == "github":
+        if not github_token:
+            print(
+                "Error: GITHUB_TOKEN environment variable is required for GitHub provider"
+            )
+            sys.exit(1)
+        print("Using GitHub Models for test generation")
+    elif args.provider == "deepseek":
+        if not deepseek_token:
+            print(
+                "Error: DEEPSEEK_TOKEN environment variable is required for DeepSeek provider"
+            )
+            sys.exit(1)
+        print("Using DeepSeek API for test generation")
+        # Adjust model name for DeepSeek if needed
+        if args.ai_model.startswith("openai/"):
+            print(
+                f"Converting model '{args.ai_model}' to 'deepseek-chat' for DeepSeek provider"
+            )
+            args.ai_model = "deepseek-chat"
 
     # Load coverage data
     try:
@@ -413,7 +496,12 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize test generator
-    test_generator = TestGenerator(github_token, args.ai_model)
+    test_generator = TestGenerator(
+        github_token=github_token,
+        deepseek_token=deepseek_token,
+        ai_model=args.ai_model,
+        provider=args.provider,
+    )
 
     generated_files = []
     processed_file = 0
@@ -466,6 +554,7 @@ def main():
         "generated_files": generated_files,
         "output_directory": str(output_dir),
         "ai_model": args.ai_model,
+        "ai_provider": args.provider,
         "test_framework": args.test_framework,
     }
 

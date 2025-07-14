@@ -19,6 +19,15 @@ A GitHub Action that automatically identifies files with low test coverage and g
 - **🔄 Flexible Integration**: Use as a standalone action or integrate into existing workflows
 - **📊 Detailed Reporting**: Provides comprehensive coverage analysis and test generation reports
 
+## 🧠 AI Provider Support
+
+GUTAI supports multiple AI providers for generating unit tests:
+
+- **GitHub Models** (Default): Uses GitHub's native AI models
+- **DeepSeek**: Uses DeepSeek's advanced code generation models
+
+Switch between providers easily with configuration options. For detailed setup and usage instructions, see the [AI Provider Integration Guide](docs/ai-provider-integration.md).
+
 ## 📋 Quick Start
 
 Add this action to your workflow:

@@ -15,9 +15,11 @@ This test demonstrates the complete GUTAI workflow in a local environment for Go
 
 import os
 import sys
+import json
 import subprocess
 import re
 import shutil
+import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
@@ -32,11 +34,13 @@ from scripts.generate_tests import TestGenerator
 class GoE2ETestRunner:
     """Orchestrates the complete E2E test workflow for Go projects."""
 
-    def __init__(self):
+    def __init__(self, provider: str = "github"):
         self.project_root = Path(__file__).parent
-        self.go_sample_dir = self.project_root / "sample_app" / "golang" / "calculator"
-        self.test_dir = self.project_root / "tests" / "e2e" / "golang" / "calculator"
+        self.go_sample_dir = self.project_root / "sample_app" / "golang"
+        self.coverage_dir = self.project_root / ".coverage_data"
+        self.test_dir = self.project_root / "tests" / "e2e" / "golang"
         self.coverage_file = self.test_dir / "coverage.out"
+        self.provider = provider
         self.test_results = {}
 
     def setup_environment(self):
@@ -212,10 +216,17 @@ class GoE2ETestRunner:
         self, source_file: str, source_code: str, existing_tests: str
     ) -> str:
         """Generate additional tests using AI."""
-        print("🤖 Generating additional Go tests using AI...")
+        print(f"🤖 Generating additional Go tests using {self.provider.title()} AI...")
 
         try:
-            generator = TestGenerator(os.getenv("GITHUB_TOKEN"))
+            github_token = os.getenv("GITHUB_TOKEN")
+            deepseek_token = os.getenv("DEEPSEEK_TOKEN")
+
+            generator = TestGenerator(
+                github_token=github_token,
+                deepseek_token=deepseek_token,
+                provider=self.provider,
+            )
 
             # Prepare the prompt for Go test generation
             prompt = f"""
@@ -421,7 +432,17 @@ func TestAdditionalEdgeCase(t *testing.T) {
 
 def main():
     """Main entry point for the Go E2E test."""
-    runner = GoE2ETestRunner()
+    parser = argparse.ArgumentParser(description="Run Go E2E test for GUTAI")
+    parser.add_argument(
+        "--provider",
+        choices=["github", "deepseek"],
+        default="github",
+        help="AI provider to use (github or deepseek)",
+    )
+
+    args = parser.parse_args()
+
+    runner = GoE2ETestRunner(provider=args.provider)
     success = runner.run_e2e_test()
     sys.exit(0 if success else 1)
 

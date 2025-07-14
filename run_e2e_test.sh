@@ -3,6 +3,7 @@
 
 # Parse command line arguments
 LANGUAGE=${1:-"python"}  # Default to python if no argument provided
+PROVIDER=${2:-"github"}  # Default to github if no provider specified
 
 case $LANGUAGE in
     "python")
@@ -19,10 +20,13 @@ case $LANGUAGE in
         ;;
     *)
         echo "❌ Unsupported language: $LANGUAGE"
-        echo "Usage: $0 [python|go|golang|all]"
+        echo "Usage: $0 [python|go|golang|all] [github|deepseek]"
         exit 1
         ;;
 esac
+
+echo "Using AI provider: $PROVIDER"
+echo ""
 
 # Install dependencies
 echo "📦 Installing dependencies..."
@@ -33,7 +37,7 @@ overall_exit_code=0
 
 if [ "$LANGUAGE" = "python" ] || [ "$LANGUAGE" = "all" ]; then
     echo "🧪 Starting Python E2E test workflow..."
-    python3 test_python_e2e.py
+    python3 test_python_e2e.py --provider "$PROVIDER"
     python_exit_code=$?
     if [ $python_exit_code -ne 0 ]; then
         overall_exit_code=1
@@ -45,7 +49,7 @@ fi
 
 if [ "$LANGUAGE" = "go" ] || [ "$LANGUAGE" = "golang" ] || [ "$LANGUAGE" = "all" ]; then
     echo "🧪 Starting Go E2E test workflow..."
-    python3 test_golang_e2e.py
+    python3 test_golang_e2e.py --provider "$PROVIDER"
     go_exit_code=$?
     if [ $go_exit_code -ne 0 ]; then
         overall_exit_code=1

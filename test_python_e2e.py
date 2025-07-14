@@ -19,6 +19,7 @@ import json
 import subprocess
 import tempfile
 import shutil
+import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
@@ -33,11 +34,12 @@ from scripts.generate_tests import TestGenerator
 class PythonE2ETestRunner:
     """Orchestrates the complete E2E test workflow for Python projects."""
 
-    def __init__(self):
+    def __init__(self, provider: str = "github"):
         self.project_root = Path(__file__).parent
         self.python_sample_dir = self.project_root / "sample_app" / "python"
         self.python_tests_dir = self.python_sample_dir / "tests"
         self.coverage_dir = self.project_root / ".coverage_data"
+        self.provider = provider
         self.test_results = {}
 
     def setup_environment(self):
@@ -194,10 +196,17 @@ def test_add(calculator):
         self, source_file: str, source_code: str, existing_tests: str
     ) -> str:
         """Generate additional tests using AI."""
-        print("🤖 Generating additional tests using AI...")
+        print(f"🤖 Generating additional tests using {self.provider.title()} AI...")
 
         try:
-            generator = TestGenerator(os.getenv("GITHUB_TOKEN"))
+            github_token = os.getenv("GITHUB_TOKEN")
+            deepseek_token = os.getenv("DEEPSEEK_TOKEN")
+
+            generator = TestGenerator(
+                github_token=github_token,
+                deepseek_token=deepseek_token,
+                provider=self.provider,
+            )
 
             # Prepare the prompt for test generation
             prompt = f"""
@@ -411,7 +420,17 @@ def test_additional_edge_case(calculator):
 
 def main():
     """Main entry point for the Python E2E test."""
-    runner = PythonE2ETestRunner()
+    parser = argparse.ArgumentParser(description="Run Python E2E test for GUTAI")
+    parser.add_argument(
+        "--provider",
+        choices=["github", "deepseek"],
+        default="github",
+        help="AI provider to use (github or deepseek)",
+    )
+
+    args = parser.parse_args()
+
+    runner = PythonE2ETestRunner(provider=args.provider)
     success = runner.run_e2e_test()
     sys.exit(0 if success else 1)
 
