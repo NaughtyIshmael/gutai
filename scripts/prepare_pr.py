@@ -94,13 +94,24 @@ Generate only the commit message, no explanation."""
         return f"Add unit tests to improve coverage for {len(generated_tests)} modules"
 
     def _generate_pr_description(
-        self, coverage_data: Dict, generated_tests: List[Dict]
+        self,
+        coverage_data: Dict,
+        generated_tests: List[Dict],
+        ai_provider: str = "github",
     ) -> str:
         """Generate comprehensive PR description"""
+
+        # Capitalize provider name for display
+        provider_display = ai_provider.title()
+        if ai_provider == "deepseek":
+            provider_display = "DeepSeek"
 
         description = f"""## Test Coverage Improvement
 
 This PR adds comprehensive unit tests to improve code coverage for modules with low test coverage.
+
+### 🤖 AI Provider
+Generated using **{provider_display}** AI for intelligent test creation.
 
 ### 📊 Coverage Analysis
 
@@ -152,6 +163,7 @@ The tests have been generated to follow best practices and should significantly 
         coverage_data: Dict,
         generated_tests: List[Dict],
         pr_title: Optional[str] = None,
+        ai_provider: str = "github",
     ) -> tuple:
         """Prepare pull request with generated tests"""
         # Generate commit message
@@ -162,7 +174,9 @@ The tests have been generated to follow best practices and should significantly 
             pr_title = self._generate_pr_title(coverage_data, generated_tests)
 
         # Generate PR description
-        pr_description = self._generate_pr_description(coverage_data, generated_tests)
+        pr_description = self._generate_pr_description(
+            coverage_data, generated_tests, ai_provider
+        )
 
         return commit_message, pr_title, pr_description
 
@@ -182,6 +196,11 @@ def main():
         "--ai-model",
         default="openai/gpt-4.1-mini",
         help="AI model for generating content",
+    )
+    parser.add_argument(
+        "--ai-provider",
+        default="github",
+        help="AI provider used for test generation (for PR description)",
     )
     parser.add_argument(
         "--output-file",
@@ -227,7 +246,7 @@ def main():
     try:
         pr_helper = GitHubModelsClient(github_token, args.ai_model)
         msg, title, body = pr_helper.prepare_pr(
-            coverage_data, generated_files, args.pr_title
+            coverage_data, generated_files, args.pr_title, args.ai_provider
         )
 
         # Save title and body to a json file
