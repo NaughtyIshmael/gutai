@@ -21,6 +21,77 @@ jobs:
           target-coverage: 80
 ```
 
+## Using DeepSeek Provider
+
+```yaml
+name: Coverage Boost with DeepSeek
+on:
+  schedule:
+    - cron: "0 10 * * 1" # Every Monday at 10 AM
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  boost-coverage-deepseek:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Boost Test Coverage with DeepSeek
+        uses: NaughtyIshmael/gutai@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deepseek-token: ${{ secrets.DEEPSEEK_TOKEN }}
+          ai-provider: "deepseek"
+          max-files: 3
+          target-coverage: 80
+          branch: "coverage-boost-deepseek"
+```
+
+## Multi-Provider Comparison
+
+```yaml
+name: AI Provider Comparison
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+jobs:
+  test-github-models:
+    runs-on: ubuntu-latest
+    name: "GitHub Models"
+    steps:
+      - name: Generate Tests with GitHub Models
+        uses: NaughtyIshmael/gutai@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ai-provider: "github"
+          max-files: 2
+          target-coverage: 75
+          branch: "coverage-boost-github"
+          pr-title: "🤖 AI Tests (GitHub Models)"
+
+  test-deepseek:
+    runs-on: ubuntu-latest
+    name: "DeepSeek"
+    steps:
+      - name: Generate Tests with DeepSeek
+        uses: NaughtyIshmael/gutai@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deepseek-token: ${{ secrets.DEEPSEEK_TOKEN }}
+          ai-provider: "deepseek"
+          max-files: 2
+          target-coverage: 75
+          branch: "coverage-boost-deepseek"
+          pr-title: "🤖 AI Tests (DeepSeek)"
+```
+
 ## Advanced Configuration
 
 ```yaml
