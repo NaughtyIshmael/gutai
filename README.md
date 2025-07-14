@@ -86,6 +86,8 @@ That's it! The action will:
 | ------------------ | ------------------------------------------------------------------ | -------- | --------------------- |
 | `codecov-token`    | Codecov API token for fetching coverage data                       | No       | `''`                  |
 | `github-token`     | GitHub token for API access and PR creation                        | Yes      | `${{ github.token }}` |
+| `deepseek-token`   | DeepSeek API token for AI test generation                          | No       | `''`                  |
+| `ai-provider`      | AI provider to use for test generation (github or deepseek)        | No       | `github`              |
 | `max-files`        | Maximum number of files to process                                 | No       | `3`                   |
 | `target-coverage`  | Only process files below this coverage %                           | No       | `80`                  |
 | `languages`        | Comma-separated list of languages to include (python,go,rust)      | No       | `auto-detect`         |
@@ -144,6 +146,27 @@ permissions:
     ai-model: "openai/gpt-4.1-mini"
     pr-title: "Improve test coverage for core modules"
     branch-prefix: "coverage-improvement"
+```
+
+### Using DeepSeek Provider
+
+```yaml
+permissions:
+  contents: write
+  pull-requests: write
+
+- name: Coverage Boost with DeepSeek
+  uses: NaughtyIshmael/gutai@v1
+  with:
+    codecov-token: ${{ secrets.CODECOV_TOKEN }}
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    deepseek-token: ${{ secrets.DEEPSEEK_TOKEN }}
+    ai-provider: "deepseek"
+    max-files: 3
+    target-coverage: 80
+    languages: "python,go"
+    pr-title: "AI-generated tests using DeepSeek"
+    branch: "coverage-boost-deepseek"
 ```
 
 ## 🎯 Supported Languages & Frameworks
