@@ -14,6 +14,14 @@ inputs:
     description: "GitHub token for API access and PR creation"
     required: true
     default: ${{ github.token }}
+  deepseek-token:
+    description: "DeepSeek API token for AI test generation"
+    required: false
+    default: ""
+  ai-provider:
+    description: "AI provider to use for test generation (github or deepseek)"
+    required: false
+    default: "github"
   max-files:
     description: "Maximum number of files to process"
     required: false
@@ -122,6 +130,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        DEEPSEEK_TOKEN: ${{ inputs.deepseek-token }}
       if: steps.check-pr.outputs.pr_url == ''
       run: |
         if [ -f coverage_data.json ]; then
@@ -130,6 +139,7 @@ runs:
             --max-files "${{ inputs.max-files }}" \
             --test-framework "${{ inputs.test-framework }}" \
             --ai-model "${{ inputs.ai-model }}" \
+            --provider "${{ inputs.ai-provider }}" \
             --output-dir generated_tests \
             --output-format "${{ inputs.output-format }}"
         fi
@@ -146,6 +156,7 @@ runs:
             --coverage-data coverage_data.json \
             --generated-tests generated_tests \
             --ai-model "${{ inputs.ai-model }}" \
+            --ai-provider "${{ inputs.ai-provider }}" \
             --output-file pr_info.json
 
           commit_msg=$(python -c "import json; data=json.load(open('pr_info.json')); print(data.get('commit_message', 'AI Generated Tests'))")
@@ -187,7 +198,6 @@ runs:
     - name: Set outputs
       shell: bash
       id: streamer
-      if: steps.check-pr.outputs.pr_url == ''
       run: |
         if [ -f generated_tests/summary.json ]; then
           files_processed=$(python -c "import json; data=json.load(open('generated_tests/summary.json')); print(data.get('files_processed', 0))")
