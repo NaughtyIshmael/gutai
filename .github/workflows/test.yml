@@ -7,11 +7,31 @@ on:
     branches: [master]
     types: [opened, synchronize, ready_for_review, reopened]
   workflow_dispatch:
+    inputs:
+      create-pr:
+        description: "Create a pull request with the generated tests"
+        required: false
+        default: true
+        type: boolean
+      github-model:
+        description: "GitHub Model to use"
+        required: false
+        default: "openai/gpt-4.1"
+        type: string
+      deepseek-model:
+        description: "DeepSeek AI model to use"
+        required: false
+        default: "deepseek-chat"
+        type: string
 
 permissions:
   models: read
   contents: write
   pull-requests: write
+
+env:
+  GITHUB_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.github-model || 'openai/gpt-4.1' }}
+  DEEPSEEK_MODEL: ${{ github.event_name == 'workflow_dispatch' && inputs.deepseek-model || 'deepseek-chat' }}
 
 jobs:
   validate-configuration:
@@ -94,10 +114,11 @@ jobs:
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
           deepseek-token: ${{ secrets.DEEPSEEK_TOKEN }}
           ai-provider: ${{ matrix.provider }}
+          ai-model: ${{ matrix.provider == 'github' && env.GITHUB_MODE || env.DEEPSEEK_MODEL }}
           exclude-patterns: "tests/*,docs/*,examples/*"
           max-files: 2
           target-coverage: 50
-          create-pr: false
+          create-pr: ${{ inputs.create-pr }}
           branch: coverage-boost-${{ matrix.provider }}-test
 
       - name: Check outputs for ${{ matrix.provider }}
